@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -26,21 +25,21 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers
 class ConsumerTest {
-    private ProducerConfigr producerConfigr = new ProducerConfigr();
-    private ConsumerConfigr consumerConfigr = new ConsumerConfigr();
+    private final ProducerConfigr producerConfigr = new ProducerConfigr();
+    private final ConsumerConfigr consumerConfigr = new ConsumerConfigr();
     private KafkaProducer<String, String> producer;
     private KafkaConsumer<String, String> consumer;
     private final String TOPIC_NAME = "messages-" + UUID.randomUUID();
     private static final DockerImageName KAFKA_TEST_IMAGE = DockerImageName.parse("confluentinc/cp-kafka:6.2.1");
-    private static final DockerImageName ZOOKEEPER_TEST_IMAGE = DockerImageName.parse("confluentinc/cp-zookeeper:4.0.0");
+    private static final DockerImageName ZOOKEEPER_TEST_IMAGE =
+            DockerImageName.parse("confluentinc/cp-zookeeper:4.0.0");
 
     @Test
-    public void producer_consumer_config_test_case() throws Exception {
+    void producer_consumer_config_test_case() throws Exception {
         try (KafkaContainer kafka = new KafkaContainer(KAFKA_TEST_IMAGE)) {
             kafka.start();
             testKafkaFunctionality(kafka.getBootstrapServers());
@@ -48,7 +47,7 @@ class ConsumerTest {
     }
 
     @Test
-    public void producer_consumer_config_test_case_with_specific_image () throws Exception {
+    void producer_consumer_config_test_case_with_specific_image() throws Exception {
         try (
                 // constructorWithVersion {
                 KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.1"))
@@ -64,7 +63,7 @@ class ConsumerTest {
     }
 
     @Test
-    public void producer_consumer_test_case_with_version() throws Exception {
+    void producer_consumer_test_case_with_version() throws Exception {
         try (KafkaContainer kafka = new KafkaContainer("6.2.1")) {
             kafka.start();
             testKafkaFunctionality(kafka.getBootstrapServers());
@@ -72,7 +71,7 @@ class ConsumerTest {
     }
 
     @Test
-    public void kafka_test_with_external_Zookeeper_with_Network() throws Exception {
+    void kafka_test_with_external_Zookeeper_with_Network() throws Exception {
         try (
                 Network network = Network.newNetwork();
                 KafkaContainer kafka = new KafkaContainer(KAFKA_TEST_IMAGE)
@@ -96,7 +95,7 @@ class ConsumerTest {
     }
 
     @Test
-    public void kafka_test_with_HostExposedPort() throws Exception {
+    void kafka_test_with_HostExposedPort() throws Exception {
         org.testcontainers.Testcontainers.exposeHostPorts(12345);
         try (KafkaContainer kafka = new KafkaContainer(KAFKA_TEST_IMAGE)) {
             kafka.start();
@@ -104,16 +103,12 @@ class ConsumerTest {
         }
     }
 
-    protected void testKafkaFunctionality(String bootstrapServers) throws Exception {
+    private void testKafkaFunctionality(String bootstrapServers) throws Exception {
         testKafkaFunctionality(bootstrapServers, 1, 1);
     }
 
-    protected void testKafkaFunctionality(String bootstrapServers, int partitions, int rf) throws Exception {
-        try (
-                AdminClient adminClient = AdminClient.create(
-                        ImmutableMap.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers)
-                )
-        ) {
+    private void testKafkaFunctionality(String bootstrapServers, int partitions, int rf) throws Exception {
+        try {
             producer = producerConfigr.getProducer(bootstrapServers);
             consumer = consumerConfigr.getConsumer(bootstrapServers);
 
@@ -154,7 +149,9 @@ class ConsumerTest {
                 Arrays.stream(topics)
                         .map(topic -> new NewTopic(topic, part, (short) rf))
                         .collect(Collectors.toList());
-        var admin = AdminClient.create(Map.of(BOOTSTRAP_SERVERS_CONFIG, broker));
-        admin.createTopics(newTopics).all().get(30, TimeUnit.SECONDS);
+        try (
+                var admin = AdminClient.create(Map.of(BOOTSTRAP_SERVERS_CONFIG, broker))) {
+            admin.createTopics(newTopics).all().get(30, TimeUnit.SECONDS);
+        }
     }
 }
