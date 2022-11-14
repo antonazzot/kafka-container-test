@@ -28,15 +28,14 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers
-class ConsumerTest {
+class KafkaTest {
     private final ProducerConfigr producerConfigr = new ProducerConfigr();
     private final ConsumerConfigr consumerConfigr = new ConsumerConfigr();
     private KafkaProducer<String, String> producer;
     private KafkaConsumer<String, String> consumer;
     private final String TOPIC_NAME = "messages-" + UUID.randomUUID();
-    private static final DockerImageName KAFKA_TEST_IMAGE = DockerImageName.parse("confluentinc/cp-kafka:6.2.1");
-    private static final DockerImageName ZOOKEEPER_TEST_IMAGE =
-            DockerImageName.parse("confluentinc/cp-zookeeper:4.0.0");
+    private final DockerImageName KAFKA_TEST_IMAGE = DockerImageName.parse("confluentinc/cp-kafka:6.2.1");
+    private final DockerImageName ZOOKEEPER_TEST_IMAGE = DockerImageName.parse("confluentinc/cp-zookeeper:4.0.0");
 
     @Test
     void producer_consumer_config_test_case() throws Exception {
@@ -100,6 +99,13 @@ class ConsumerTest {
         try (KafkaContainer kafka = new KafkaContainer(KAFKA_TEST_IMAGE)) {
             kafka.start();
             testKafkaFunctionality(kafka.getBootstrapServers());
+        }
+    }
+    @Test
+    void kafka_different_cases() throws Exception {
+        try (KafkaContainer kafka = new KafkaContainer(KAFKA_TEST_IMAGE)) {
+            kafka.start();
+            testKafkaFunctionality(kafka.getBootstrapServers(), 2, 4);
         }
     }
 
